@@ -16,19 +16,23 @@ Al usar `new URL("/api/auth/callback", request.url).toString()`, se podría gene
 
 ## Solución Propuesta
 
-### A. Modificar `src/lib/supabase.ts`
-Debemos asegurar que al hacer `set()` y `remove()` en el adapter de cookies de Astro, siempre se le pase `path: "/"`.
+### A. Modificar `src/lib/supabase.ts` (Cookie Hardening)
+Debemos asegurar que al hacer `set()` y `remove()` en el adapter de cookies de Astro, siempre se le pase `path: "/"`. Además, requeriremos que Vercel sirva estas cookies por protocolo seguro con `secure: true` y permitiremos el flujo OAuth intermedio configurando `sameSite: 'lax'`.
 
 ```typescript
 set(key, value, options) {
-  cookies.set(key, value, { ...options, path: "/" });
+  cookies.set(key, value, { ...options, path: "/", secure: true, sameSite: 'lax' });
 },
 remove(key, options) {
   cookies.delete(key, { ...options, path: "/" });
 },
 ```
 
-### B. Modificar `src/pages/api/auth/signin.ts`
+### B. Modificar `src/middleware.ts` (SSR Validation)
+Reemplazar `supabase.auth.getSession()` por `supabase.auth.getUser()`. 
+En el edge de Vercel, `getSession` sólo confía en la firma local del JWT y puede devolver falsos negativos en casos de drift o tokens opacos no actualizados por PKCE provocando redirecciones infinitas al `/login`. `getUser()` asegura validez estricta contra la API de Auth de Supabase.
+
+### C. Modificar `src/pages/api/auth/signin.ts` (Protocol Mismatch)
 Debemos detectar si no estamos en `localhost` y forzar que el protocolo de la `redirectTo` URL sea `https:`.
 
 ```typescript
@@ -40,4 +44,4 @@ if (callbackUrl.hostname !== "localhost" && callbackUrl.hostname !== "127.0.0.1"
 
 ## Validación
 - Hacer deploy a Vercel tras este commit.
-- Intentar login con Google. El callback debería procesar el PKCE correctamente tras ser redirigido a HTTPS seguro y con las cookies disponibles en todo el dominio.
+- Intentar login con Google. El callback debería procesar el PKCE correctamente tras ser redirigido a HTTPS seguro y con las cookies disponibles en todo el dominio. El Middleware validará al usuario con `getUser()` y permitirá el paso hacia el Dashboard.
