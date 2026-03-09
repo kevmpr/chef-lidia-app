@@ -29,10 +29,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     // Helper for secure redirects
     const secureRedirect = (path: string) => {
-        const redirectUrl = new URL(path, url);
+        // Build absolute URL using the incoming request url as the base
+        const redirectUrl = new URL(path, url.origin);
         if (redirectUrl.hostname !== "localhost" && redirectUrl.hostname !== "127.0.0.1") {
             redirectUrl.protocol = "https:";
         }
+        console.log(`[Middleware] -> Redirecting to: ${redirectUrl.toString()}`);
         return redirect(redirectUrl.toString());
     };
 

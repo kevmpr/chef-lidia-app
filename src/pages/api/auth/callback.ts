@@ -22,12 +22,13 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
 
         console.log("[Callback] Exchange successful. Redirecting...");
 
-        // Secure redirect
-        const redirectUrl = new URL(next, url);
+        // Secure absolute redirect
+        const redirectUrl = new URL(next, url.origin);
         if (redirectUrl.hostname !== "localhost" && redirectUrl.hostname !== "127.0.0.1") {
             redirectUrl.protocol = "https:";
         }
 
+        console.log(`[Callback] -> Redirecting to: ${redirectUrl.toString()}`);
         return redirect(redirectUrl.toString());
 
     } catch (err: any) {

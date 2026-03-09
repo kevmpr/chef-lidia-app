@@ -13,5 +13,8 @@ export default defineConfig({
   },
 
   integrations: [svelte()],
-  adapter: vercel()
+  adapter: vercel(),
+  site: process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:4321')
 });
