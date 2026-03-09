@@ -1,7 +1,8 @@
 import type { APIRoute } from "astro";
 import { getSupabase } from "../../../lib/supabase";
+import { getRealOrigin } from "../../../lib/utils";
 
-export const GET: APIRoute = async ({ url, cookies, redirect }) => {
+export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
     const authCode = url.searchParams.get("code");
     const next = url.searchParams.get("next") || "/";
 
@@ -22,11 +23,9 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
 
         console.log("[Callback] Exchange successful. Redirecting...");
 
-        // Secure absolute redirect
-        const redirectUrl = new URL(next, url.origin);
-        if (redirectUrl.hostname !== "localhost" && redirectUrl.hostname !== "127.0.0.1") {
-            redirectUrl.protocol = "https:";
-        }
+        // Secure absolute redirect using request headers
+        const realOrigin = getRealOrigin(request);
+        const redirectUrl = new URL(next, realOrigin);
 
         console.log(`[Callback] -> Redirecting to: ${redirectUrl.toString()}`);
         return redirect(redirectUrl.toString());

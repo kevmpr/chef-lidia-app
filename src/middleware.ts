@@ -1,13 +1,17 @@
 import { defineMiddleware } from "astro:middleware";
 import { getSupabase } from "./lib/supabase";
+import { getRealOrigin } from "./lib/utils";
 
 const protectedRoutes = ["/platos", "/calendario", "/exportar"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
-    const { url, cookies, redirect } = context;
+    const { request, url, cookies, redirect } = context;
+
+    const realOrigin = getRealOrigin(request);
 
     // --- DEBUG LOGGING ---
     console.log("[Middleware] Route:", url.pathname);
+    console.log("[Middleware] Detected Host:", realOrigin);
     console.log("[Middleware] SUPABASE_URL prefix:", import.meta.env.PUBLIC_SUPABASE_URL?.substring(0, 5));
 
     // Log auth cookies presence
@@ -29,11 +33,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     // Helper for secure redirects
     const secureRedirect = (path: string) => {
-        // Build absolute URL using the incoming request url as the base
-        const redirectUrl = new URL(path, url.origin);
-        if (redirectUrl.hostname !== "localhost" && redirectUrl.hostname !== "127.0.0.1") {
-            redirectUrl.protocol = "https:";
-        }
+        // Build absolute URL using the real origin resolving from headers
+        const redirectUrl = new URL(path, realOrigin);
         console.log(`[Middleware] -> Redirecting to: ${redirectUrl.toString()}`);
         return redirect(redirectUrl.toString());
     };
