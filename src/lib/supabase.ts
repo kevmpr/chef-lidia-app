@@ -11,10 +11,10 @@ export const getSupabase = (cookies: AstroCookies) => {
           return cookies.get(key)?.value;
         },
         set(key, value, options) {
-          cookies.set(key, value, options);
+          cookies.set(key, value, { ...options, path: '/' });
         },
         remove(key, options) {
-          cookies.delete(key, options);
+          cookies.delete(key, { ...options, path: '/' });
         },
       },
     }
