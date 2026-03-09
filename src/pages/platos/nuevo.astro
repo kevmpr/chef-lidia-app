@@ -1,0 +1,132 @@
+---
+import { actions } from 'astro:actions';
+import ImageUploader from '../../components/islands/ImageUploader.svelte';
+
+const { session, supabase } = Astro.locals;
+if (!session) {
+  return Astro.redirect('/login');
+}
+
+// Obtener categorías para el dropdown
+const { data: categories } = await supabase
+  .from('categories')
+  .select('id, name')
+  .order('name');
+
+// Si esto es un post-back y hubo error, lo capturamos
+const result = Astro.getActionResult(actions.createDish);
+
+// Si fue éxito, mandamos directo a la lista
+if (result && !result.error && result.data) {
+  return Astro.redirect('/platos');
+}
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Nuevo Plato - Chef Lidia</title>
+  </head>
+  <body class="bg-amber-50 min-h-screen font-sans text-gray-800">
+    <header class="bg-white shadow-sm p-4 flex items-center gap-3 sticky top-0 z-20">
+      <a href="/platos" class="text-olive-700 font-bold text-xl px-2">←</a>
+      <h1 class="text-xl font-serif font-bold text-olive-800">Nuevo Plato</h1>
+    </header>
+
+    <main class="p-4 max-w-lg mx-auto pb-8">
+      
+      <form method="POST" action={actions.createDish} class="space-y-6">
+        
+        <!-- SECCIÓN 1: FOTO (ISLA SVELTE) -->
+        <section class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <label class="block font-bold text-gray-700 mb-2">Foto del Plato</label>
+          <!-- El ImageUploader procesará e insertará el <input type="hidden" name="image_url"> -->
+          <ImageUploader client:load folderPath={`platos/${session.user.id}`} />
+        </section>
+
+        <!-- SECCIÓN 2: DATOS -->
+        <section class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+          
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-1">Nombre</label>
+            <input 
+              type="text" 
+              name="name" 
+              placeholder="Ej: Milanesa con puré" 
+              required
+              class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-olive-500"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1">Precio ($)</label>
+              <input 
+                type="number" 
+                name="price" 
+                min="0"
+                step="0.01"
+                placeholder="0.00" 
+                required
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-olive-500 font-medium"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1">Categoría</label>
+              <select 
+                name="category_id"
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-olive-500 appearance-none"
+              >
+                <option value="">Selecciona...</option>
+                {categories?.map(cat => (
+                  <option value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-1">Descripción (Opcional)</label>
+            <textarea 
+              name="description" 
+              rows="2"
+              placeholder="Breve detalle del plato" 
+              class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-olive-500 resize-none"
+            ></textarea>
+          </div>
+
+        </section>
+
+        <!-- SECCIÓN 3: CONFIGURACIÓN -->
+        <section class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+          <div>
+            <p class="font-bold text-gray-700">Fijar a la Carta</p>
+            <p class="text-xs text-gray-500">Los platos fijos no rotan y siempre se ven.</p>
+          </div>
+          
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" name="is_fixed" value="true" class="sr-only peer">
+            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-olive-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-olive-600"></div>
+          </label>
+        </section>
+
+        {result && result.error && (
+          <div class="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-100">
+            Error: {result.error.message}
+          </div>
+        )}
+
+        <button 
+          type="submit" 
+          class="w-full bg-olive-600 hover:bg-olive-700 text-white font-medium py-4 px-4 rounded-xl shadow-md transition-all active:scale-95 flex justify-center items-center gap-2"
+        >
+          Guardar Plato
+        </button>
+
+      </form>
+
+    </main>
+  </body>
+</html>

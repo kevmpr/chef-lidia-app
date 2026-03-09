@@ -1,0 +1,62 @@
+---
+// index.astro
+const { session, supabase } = Astro.locals;
+
+// Redirigir si no hay sesión para mayor seguridad, aunque el middleware ya lo haga
+if (!session) {
+  return Astro.redirect('/login');
+}
+
+// Obtener detalles del usuario
+const user = session.user;
+const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Lidia';
+
+import ImageUploader from '../components/islands/ImageUploader.svelte';
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Panel - Chef Lidia y Familia</title>
+  </head>
+  <body class="bg-amber-50 min-h-screen font-sans text-gray-800">
+    <header class="bg-white shadow-sm p-4 flex justify-between items-center">
+      <h1 class="text-xl font-serif font-bold text-olive-800" style="color: #556B2F;">Hola {userName} 👋</h1>
+      <a href="/api/auth/signout" class="text-sm font-medium text-red-600 hover:text-red-800">Cerrar Sesión</a>
+    </header>
+    
+    <main class="p-4 max-w-lg mx-auto mt-6 space-y-4">
+      <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <h2 class="text-lg font-bold mb-2">Menú de Hoy</h2>
+        <p class="text-gray-500 text-sm">Próximamente verás aquí los platos del día.</p>
+      </section>
+
+      <!-- Botón flotante simulado o botón de acción rápida -->
+      <a href="/platos/nuevo" class="block w-full text-center bg-olive-600 text-white font-medium py-4 px-4 rounded-xl shadow-md transition-all active:scale-95" style="background-color: #556B2F;">
+        + Crear Plato Mágico
+      </a>
+      
+      <!-- Placeholder de Svelte Island -->
+      <div class="mt-8 border-t pt-4">
+        <p class="text-xs text-gray-400 mb-2 uppercase tracking-wide font-semibold">Demo de Isla Svelte</p>
+        <ImageUploader client:load />
+      </div>
+    </main>
+
+    <footer class="fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around p-3 text-xs text-gray-500 font-medium pb-safe">
+      <a href="/" class="flex flex-col items-center text-olive-700 pointer-events-none">
+        <span class="text-xl mb-1">🏠</span>
+        Inicio
+      </a>
+      <a href="/categorias" class="flex flex-col items-center hover:text-olive-700">
+        <span class="text-xl mb-1">🏷️</span>
+        Categorías
+      </a>
+      <a href="/platos" class="flex flex-col items-center hover:text-olive-700">
+        <span class="text-xl mb-1">🥘</span>
+        Platos
+      </a>
+    </footer>
+  </body>
+</html>

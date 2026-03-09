@@ -1,0 +1,1 @@
+ALTER TABLE public.dishes ADD COLUMN price NUMERIC(10,2) DEFAULT 0.00;
