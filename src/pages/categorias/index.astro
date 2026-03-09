@@ -1,6 +1,6 @@
 ---
 import { actions } from 'astro:actions';
-import '../../styles/global.css';
+import Layout from '../../layouts/Layout.astro';
 
 const { session, supabase } = Astro.locals;
 if (!session) {
@@ -17,13 +17,7 @@ const { data: categories, error } = await supabase
 const result = Astro.getActionResult(actions.createCategory);
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Categorías - Chef Lidia</title>
-  </head>
-  <body class="bg-amber-50 min-h-screen font-sans text-gray-800 pb-20">
+<Layout title="Categorías - Chef Lidia" bodyClass="bg-amber-50 min-h-screen font-sans text-gray-800 pb-20">
     <header class="bg-white shadow-sm p-4 flex items-center justify-between sticky top-0 z-10">
       <div class="flex items-center gap-3">
         <a href="/" class="text-olive-700 font-bold text-xl">←</a>
@@ -109,5 +103,4 @@ const result = Astro.getActionResult(actions.createCategory);
         Platos
       </a>
     </footer>
-  </body>
-</html>
+</Layout>

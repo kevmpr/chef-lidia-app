@@ -1,7 +1,7 @@
 ---
 import { actions } from 'astro:actions';
+import Layout from '../../layouts/Layout.astro';
 import ImageUploader from '../../components/islands/ImageUploader.svelte';
-import '../../styles/global.css';
 
 const { session, supabase } = Astro.locals;
 if (!session) {
@@ -23,13 +23,7 @@ if (result && !result.error && result.data) {
 }
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Nuevo Plato - Chef Lidia</title>
-  </head>
-  <body class="bg-amber-50 min-h-screen font-sans text-gray-800">
+<Layout title="Nuevo Plato - Chef Lidia">
     <header class="bg-white shadow-sm p-4 flex items-center gap-3 sticky top-0 z-20">
       <a href="/platos" class="text-olive-700 font-bold text-xl px-2">←</a>
       <h1 class="text-xl font-serif font-bold text-olive-800">Nuevo Plato</h1>
@@ -129,5 +123,4 @@ if (result && !result.error && result.data) {
       </form>
 
     </main>
-  </body>
-</html>
+</Layout>

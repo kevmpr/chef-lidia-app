@@ -1,6 +1,6 @@
 ---
 import { actions } from 'astro:actions';
-import '../../styles/global.css';
+import Layout from '../../layouts/Layout.astro';
 
 const { session, supabase } = Astro.locals;
 if (!session) {
@@ -15,13 +15,7 @@ const { data: dishes, error } = await supabase
 
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Platos - Chef Lidia</title>
-  </head>
-  <body class="bg-amber-50 min-h-screen font-sans text-gray-800 pb-24">
+<Layout title="Platos - Chef Lidia" bodyClass="bg-amber-50 min-h-screen font-sans text-gray-800 pb-24">
     <header class="bg-white shadow-sm p-4 flex items-center justify-between sticky top-0 z-20">
       <div class="flex items-center gap-3">
         <h1 class="text-xl font-serif font-bold text-olive-800">Tus Platos</h1>
@@ -118,5 +112,4 @@ const { data: dishes, error } = await supabase
         Platos
       </a>
     </footer>
-  </body>
-</html>
+</Layout>
