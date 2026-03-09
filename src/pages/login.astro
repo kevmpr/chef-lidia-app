@@ -1,5 +1,6 @@
 ---
 // login.astro
+import '../styles/global.css';
 const { session } = Astro.locals;
 if (session) {
   return Astro.redirect('/');

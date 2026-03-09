@@ -1,5 +1,6 @@
 ---
 // index.astro
+import '../styles/global.css';
 const { session, supabase } = Astro.locals;
 
 // Redirigir si no hay sesión para mayor seguridad, aunque el middleware ya lo haga

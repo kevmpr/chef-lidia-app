@@ -1,6 +1,7 @@
 ---
 import { actions } from 'astro:actions';
 import ImageUploader from '../../components/islands/ImageUploader.svelte';
+import '../../styles/global.css';
 
 const { session, supabase } = Astro.locals;
 if (!session) {
