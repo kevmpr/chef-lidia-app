@@ -6,26 +6,52 @@ const protectedRoutes = ["/platos", "/calendario", "/exportar"];
 export const onRequest = defineMiddleware(async (context, next) => {
     const { url, cookies, redirect } = context;
 
+    // --- DEBUG LOGGING ---
+    console.log("[Middleware] Route:", url.pathname);
+    console.log("[Middleware] SUPABASE_URL prefix:", import.meta.env.PUBLIC_SUPABASE_URL?.substring(0, 5));
+
+    // Log auth cookies presence
+    const allCookies = cookies.headers() ? Array.from(cookies.headers()) : [];
+    const authCookies = allCookies.filter(c => c[0].includes('sb-'));
+    console.log("[Middleware] Auth Cookies Present:", authCookies.length > 0 ? "Yes" : "No");
+
     const supabase = getSupabase(cookies);
 
     // Validate the token actively against Supabase (getUser instead of getSession)
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError) {
+        console.error("[Middleware] getUser Error:", userError.message);
+    }
+    // --- END DEBUG LOGGING ---
 
     const isProtectedRoute = protectedRoutes.some(route => url.pathname.startsWith(route));
 
+    // Helper for secure redirects
+    const secureRedirect = (path: string) => {
+        const redirectUrl = new URL(path, url);
+        if (redirectUrl.hostname !== "localhost" && redirectUrl.hostname !== "127.0.0.1") {
+            redirectUrl.protocol = "https:";
+        }
+        return redirect(redirectUrl.toString());
+    };
+
     // If there's no user and the user tries to access a protected route
     if (isProtectedRoute && !user) {
-        return redirect("/login");
+        console.log("[Middleware] Redirecting to /login (Protected route, no user)");
+        return secureRedirect("/login");
     }
 
     // If there's a user and the user is on the login page
     if (user && url.pathname === "/login") {
-        return redirect("/");
+        console.log("[Middleware] Redirecting to / (User already logged in)");
+        return secureRedirect("/");
     }
 
     // Protect the dashboard (/)
     if (url.pathname === "/" && !user) {
-        return redirect("/login");
+        console.log("[Middleware] Redirecting to /login (Dashboard protected, no user)");
+        return secureRedirect("/login");
     }
 
     // Recover the session for Locals (getUser already validated it)

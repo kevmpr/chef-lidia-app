@@ -14,34 +14,26 @@ Dado que el inicio de sesión ocurre en `/api/auth/signin`, si no se especifica 
 Al correr en Vercel, el protocolo de la request que llega a Astro puede reportarse como `http://` debido a cómo funciona la terminación SSL en el edge/proxy. 
 Al usar `new URL("/api/auth/callback", request.url).toString()`, se podría generar un `http://midominio.vercel.app/api/auth/callback`. Auth de Google y Supabase exigen HTTPS estricto para las redirect URIs, lo cual causa desajustes y rechazos (Google dirá URI Mismatch).
 
-## Solución Propuesta
+## Solución Propuesta (Deep Debugging)
 
-### A. Modificar `src/lib/supabase.ts` (Cookie Hardening)
-Debemos asegurar que al hacer `set()` y `remove()` en el adapter de cookies de Astro, siempre se le pase `path: "/"`. Además, requeriremos que Vercel sirva estas cookies por protocolo seguro con `secure: true` y permitiremos el flujo OAuth intermedio configurando `sameSite: 'lax'`.
-
+### A. Modificar `src/lib/supabase.ts` (Cookie Hardening & Persistence)
+Además del `secure` y `sameSite: 'lax'`, explícitamente le indicamos al cliente de SSR que confíe exclusivamente en las cookies para hidratar la sesión:
 ```typescript
-set(key, value, options) {
-  cookies.set(key, value, { ...options, path: "/", secure: true, sameSite: 'lax' });
-},
-remove(key, options) {
-  cookies.delete(key, { ...options, path: "/" });
-},
+auth: { persistSession: true, detectSessionInUrl: false }
 ```
 
-### B. Modificar `src/middleware.ts` (SSR Validation)
+### B. Modificar `src/middleware.ts` (SSR Validation & Logging)
 Reemplazar `supabase.auth.getSession()` por `supabase.auth.getUser()`. 
-En el edge de Vercel, `getSession` sólo confía en la firma local del JWT y puede devolver falsos negativos en casos de drift o tokens opacos no actualizados por PKCE provocando redirecciones infinitas al `/login`. `getUser()` asegura validez estricta contra la API de Auth de Supabase.
+Agregamos profuso `console.log` para escupir en Vercel:
+- Si existen cookies `sb-*`.
+- Errores de `getUser`.
+- Los primeros 5 caracteres de `PUBLIC_SUPABASE_URL` para chequear el env setup.
+- Redirección forzada segura (`https:`) para evitar saltar a HTTP en Vercel limitando la visibilidad de la cookie `secure`.
 
-### C. Modificar `src/pages/api/auth/signin.ts` (Protocol Mismatch)
-Debemos detectar si no estamos en `localhost` y forzar que el protocolo de la `redirectTo` URL sea `https:`.
-
-```typescript
-const callbackUrl = new URL("/api/auth/callback", request.url);
-if (callbackUrl.hostname !== "localhost" && callbackUrl.hostname !== "127.0.0.1") {
-    callbackUrl.protocol = "https:";
-}
-```
+### C. Modificar `src/pages/api/auth/signin.ts` y `callback.ts` (Protocol & Trace)
+- Ambos fuerzan `https:` si el origin no es `localhost`.
+- Se atrapa con `try/catch` el momento exacto donde `exchangeCodeForSession` corre en el Callback, guardando evidencia de éxito o error en los logs.
 
 ## Validación
 - Hacer deploy a Vercel tras este commit.
-- Intentar login con Google. El callback debería procesar el PKCE correctamente tras ser redirigido a HTTPS seguro y con las cookies disponibles en todo el dominio. El Middleware validará al usuario con `getUser()` y permitirá el paso hacia el Dashboard.
+- Intentar login con Google y luego revisar los Edge Logs de Vercel. Allí confirmaremos si la cookie sobrevive el viaje hacia el middleware.

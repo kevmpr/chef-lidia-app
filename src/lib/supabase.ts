@@ -6,6 +6,10 @@ export const getSupabase = (cookies: AstroCookies) => {
     import.meta.env.PUBLIC_SUPABASE_URL,
     import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
     {
+      auth: {
+        persistSession: true,
+        detectSessionInUrl: false
+      },
       cookies: {
         get(key) {
           return cookies.get(key)?.value;
